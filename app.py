@@ -7,6 +7,7 @@ from alerts import send_alert
 from url_checker import check_url
 from database import insert_report, register_user, login_user
 from quiz import get_quiz
+from voice_detection import detect_voice
 
 # Tesseract Path
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -166,27 +167,6 @@ elif choice == "📸 Screenshot":
 
         result = predict_message(text)
         st.write(result)
-
-# 🎤 VOICE DETECTION
-elif choice == "Voice":
-    st.subheader("🎤 Voice Scam Detection")
-
-    st.info("Click below and speak a suspicious message")
-
-    if st.button("🎙 Start Recording"):
-        with st.spinner("Listening..."):
-            text = detect_voice()
-
-        st.write("🗣 Detected Speech:")
-        st.success(text)
-
-        # Run fraud detection on voice text
-        result = predict_message(text)
-
-        if "Fraud" in result:
-            st.error(result)
-        else:
-            st.success(result)
 # ---------- REPORT ----------
 elif choice == "📝 Report":
     st.subheader("📝 Report Scam")
@@ -215,6 +195,27 @@ elif choice == "🧠 Quiz":
             st.balloons()
         else:
             st.error("❌ Wrong")
+
+# 🎤 VOICE DETECTION
+elif choice == "Voice":
+    st.subheader("🎤 Voice Scam Detection")
+
+    st.info("Click below and speak a suspicious message")
+
+    if st.button("🎙 Start Recording"):
+        with st.spinner("Listening..."):
+            text = detect_voice()
+
+        st.write("🗣 Detected Speech:")
+        st.success(text)
+
+        # Run fraud detection on voice text
+        result = predict_message(text)
+
+        if "Fraud" in result:
+            st.error(result)
+        else:
+            st.success(result)
 
 # ---------- FOOTER ----------
 st.markdown("---")
