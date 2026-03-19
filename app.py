@@ -167,6 +167,26 @@ elif choice == "📸 Screenshot":
         result = predict_message(text)
         st.write(result)
 
+# 🎤 VOICE DETECTION
+elif choice == "Voice":
+    st.subheader("🎤 Voice Scam Detection")
+
+    st.info("Click below and speak a suspicious message")
+
+    if st.button("🎙 Start Recording"):
+        with st.spinner("Listening..."):
+            text = detect_voice()
+
+        st.write("🗣 Detected Speech:")
+        st.success(text)
+
+        # Run fraud detection on voice text
+        result = predict_message(text)
+
+        if "Fraud" in result:
+            st.error(result)
+        else:
+            st.success(result)
 # ---------- REPORT ----------
 elif choice == "📝 Report":
     st.subheader("📝 Report Scam")
