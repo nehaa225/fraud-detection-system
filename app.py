@@ -219,4 +219,4 @@ elif choice == "Voice":
 
 # ---------- FOOTER ----------
 st.markdown("---")
-st.markdown("<center style='color:gray;'>🔐 AI Fraud Detection System | Final Year Project</center>", unsafe_allow_html=True)
+st.markdown("<center style='color:gray;'>🔐 AI Fraud Detection System </center>", unsafe_allow_html=True)
