@@ -1,14 +1,9 @@
 import speech_recognition as sr
 
-def detect_voice():
+file = st.file_uploader("Upload Audio", type=["wav", "mp3"])
+if file:
     r = sr.Recognizer()
-
-    with sr.Microphone() as source:
-        print("Speak now...")
-        audio = r.listen(source)
-
-    try:
-        text = r.recognize_google(audio)
-        return text
-    except:
-        return "Could not understand audio"
+    with sr.AudioFile(file) as source:
+        audio = r.record(source)
+    text = r.recognize_google(audio)
+    st.write("Detected Speech:", text)
