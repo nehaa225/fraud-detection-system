@@ -89,9 +89,9 @@ if not st.session_state.logged_in:
 st.sidebar.title("Navigation")
 
 if st.session_state.role == "Admin":
-    menu = ["📊 Dashboard","🔍 Detect","🌐 URL","📸 Screenshot","📝 Report","🧠 Quiz"]
+    menu = ["📊 Dashboard"]
 else:
-    menu = ["🔍 Detect","🌐 URL","📸 Screenshot","🧠 Quiz"]
+    menu = ["🔍 Detect","🌐 URL","🎤 Voice","📸 Screenshot","🧠 Quiz","📝 Report"]
 
 choice = st.sidebar.radio("Go to", menu)
 
