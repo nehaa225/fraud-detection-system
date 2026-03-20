@@ -1,7 +1,9 @@
 streamlit
 pandas
+numpy
 scikit-learn
+pillow
+pytesseract
 mysql-connector-python
 python-dotenv
-pytesseract
-pillow
+speechrecognition  # optional if using audio upload

@@ -7,7 +7,7 @@ from alerts import send_alert
 from url_checker import check_url
 from database import insert_report, register_user, login_user, get_all_users, get_all_reports
 from quiz import get_quiz
-from voice_detection import detect_voice_from_file  # Updated function
+from voice_detection import detect_voice_from_file  # must accept uploaded file
 
 # Tesseract Path
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -96,7 +96,7 @@ elif choice == "👥 Users":
     if search:
         filtered_df = filtered_df[filtered_df['username'].str.contains(search, case=False)]
     if role_filter != "All":
-        filtered_df = filtered_df[filtered_df['role'] == role_filter]
+        filtered_df = filtered_df[df_users['role'] == role_filter]
     st.table(filtered_df)
 
     st.markdown("---")
@@ -164,13 +164,14 @@ elif choice == "🧠 Quiz":
 elif choice == "🎤 Voice":
     st.subheader("🎤 Voice Scam Detection (Upload Audio)")
     uploaded_file = st.file_uploader("Upload your audio file (wav/mp3)", type=["wav","mp3"])
-    if uploaded_file and st.button("Analyze Audio"):
-        text = detect_voice_from_file(uploaded_file)
-        st.write("🗣 Detected Speech:")
-        st.success(text)
-        result = predict_message(text)
-        if "Fraud" in result: st.error(result)
-        else: st.success(result)
+    if uploaded_file:
+        if st.button("Analyze Audio"):
+            text = detect_voice_from_file(uploaded_file)
+            st.write("🗣 Detected Speech:")
+            st.success(text)
+            result = predict_message(text)
+            if "Fraud" in result: st.error(result)
+            else: st.success(result)
 
 # ---------- FOOTER ----------
 st.markdown("---")
