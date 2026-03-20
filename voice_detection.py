@@ -1,9 +1,22 @@
+# voice_detection.py
 import speech_recognition as sr
+import streamlit as st
 
-file = st.file_uploader("Upload Audio", type=["wav", "mp3"])
-if file:
+def detect_voice_from_file(file):
+    """
+    Converts uploaded audio file to text using Google Speech Recognition
+    """
+    if not file:
+        return "No file uploaded"
+    
     r = sr.Recognizer()
+    
+    # Use AudioFile for uploaded file
     with sr.AudioFile(file) as source:
         audio = r.record(source)
-    text = r.recognize_google(audio)
-    st.write("Detected Speech:", text)
+    
+    try:
+        text = r.recognize_google(audio)
+        return text
+    except:
+        return "Could not understand audio"

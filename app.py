@@ -7,7 +7,7 @@ from alerts import send_alert
 from url_checker import check_url
 from database import insert_report, register_user, login_user, get_all_users, get_all_reports
 from quiz import get_quiz
-from voice_detection import detect_voice
+from voice_detection import detect_voice_from_file  # Updated function
 
 # Tesseract Path
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -42,7 +42,6 @@ if not st.session_state.logged_in:
         user = st.text_input("Username")
         pwd = st.text_input("Password", type="password")
         role = st.selectbox("Role", ["User", "Admin"])
-
         if st.button("Register"):
             register_user(user, pwd, role)
             st.success("✅ Registered Successfully")
@@ -50,7 +49,6 @@ if not st.session_state.logged_in:
     else:
         user = st.text_input("Username")
         pwd = st.text_input("Password", type="password")
-
         if st.button("Login"):
             result = login_user(user, pwd)
             if result:
@@ -60,12 +58,10 @@ if not st.session_state.logged_in:
                 st.rerun()
             else:
                 st.error("❌ Invalid Credentials")
-
     st.stop()
 
 # ---------- SIDEBAR ----------
 st.sidebar.title("Navigation")
-
 if st.session_state.role == "Admin":
     menu = ["📊 Dashboard","👥 Users","🔍 Detect","🌐 URL","🎤 Voice","📸 Screenshot","📝 Report","🧠 Quiz"]
 else:
@@ -82,31 +78,25 @@ if st.sidebar.button("🚪 Logout"):
 # ---------- DASHBOARD ----------
 if choice == "📊 Dashboard":
     st.subheader("📊 Admin Dashboard")
-
     col1, col2, col3 = st.columns(3)
     col1.metric("Fraud Cases", "120", "+10")
     col2.metric("Safe Messages", "80", "+5")
     col3.metric("Accuracy", "92%", "+2%")
-
     data = pd.DataFrame({"Type":["Fraud","Safe"],"Count":[60,40]})
     st.bar_chart(data.set_index("Type"))
 
 # ---------- VIEW USERS ----------
 elif choice == "👥 Users":
     st.subheader("👥 User Management")
-
     users = get_all_users()
     df_users = pd.DataFrame(users)
-
     search = st.text_input("🔍 Search by Username")
     role_filter = st.selectbox("Filter by Role", ["All","User","Admin"])
-
     filtered_df = df_users.copy()
     if search:
         filtered_df = filtered_df[filtered_df['username'].str.contains(search, case=False)]
     if role_filter != "All":
         filtered_df = filtered_df[filtered_df['role'] == role_filter]
-
     st.table(filtered_df)
 
     st.markdown("---")
@@ -172,10 +162,10 @@ elif choice == "🧠 Quiz":
 
 # ---------- VOICE ----------
 elif choice == "🎤 Voice":
-    st.subheader("🎤 Voice Scam Detection")
-    st.info("Click below and speak a suspicious message")
-    if st.button("🎙 Start Recording"):
-        text = detect_voice()
+    st.subheader("🎤 Voice Scam Detection (Upload Audio)")
+    uploaded_file = st.file_uploader("Upload your audio file (wav/mp3)", type=["wav","mp3"])
+    if uploaded_file and st.button("Analyze Audio"):
+        text = detect_voice_from_file(uploaded_file)
         st.write("🗣 Detected Speech:")
         st.success(text)
         result = predict_message(text)
