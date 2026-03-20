@@ -5,7 +5,7 @@ from PIL import Image
 from fraud_model import predict_message
 from alerts import send_alert
 from url_checker import check_url
-from database import insert_report, register_user, login_user
+from database import insert_report, register_user, login_user, get_all_users, get_all_reports
 from quiz import get_quiz
 from voice_detection import detect_voice
 
@@ -18,30 +18,10 @@ st.set_page_config(page_title="AI Fraud Detection", page_icon="🛡️", layout=
 # ---------- STYLING ----------
 st.markdown("""
 <style>
-body {
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: white;
-}
-.title {
-    text-align:center;
-    font-size:45px;
-    font-weight:bold;
-    color:#38bdf8;
-}
-.card {
-    background:#1e293b;
-    padding:20px;
-    border-radius:15px;
-    text-align:center;
-    box-shadow:0px 4px 10px rgba(0,0,0,0.5);
-}
-.stButton>button {
-    background: linear-gradient(to right,#22c55e,#4ade80);
-    color:white;
-    border-radius:10px;
-    height:3em;
-    width:100%;
-}
+body { background: linear-gradient(135deg, #0f172a, #1e293b); color: white; }
+.title { text-align:center; font-size:45px; font-weight:bold; color:#38bdf8; }
+.card { background:#1e293b; padding:20px; border-radius:15px; text-align:center; box-shadow:0px 4px 10px rgba(0,0,0,0.5); }
+.stButton>button { background: linear-gradient(to right,#22c55e,#4ade80); color:white; border-radius:10px; height:3em; width:100%; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -56,7 +36,6 @@ if "logged_in" not in st.session_state:
 if not st.session_state.logged_in:
 
     st.subheader("🔐 Login / Register")
-
     option = st.selectbox("Select Option", ["Login", "Register"])
 
     if option == "Register":
@@ -74,7 +53,6 @@ if not st.session_state.logged_in:
 
         if st.button("Login"):
             result = login_user(user, pwd)
-
             if result:
                 st.session_state.logged_in = True
                 st.session_state.role = result[3]
@@ -89,9 +67,9 @@ if not st.session_state.logged_in:
 st.sidebar.title("Navigation")
 
 if st.session_state.role == "Admin":
-    menu = ["📊 Dashboard"]
+    menu = ["📊 Dashboard","👥 Users","🔍 Detect","🌐 URL","🎤 Voice","📸 Screenshot","📝 Report","🧠 Quiz"]
 else:
-    menu = ["🔍 Detect","🌐 URL","🎤 Voice","📸 Screenshot","🧠 Quiz","📝 Report"]
+    menu = ["🔍 Detect","🌐 URL","🎤 Voice","📸 Screenshot","📝 Report","🧠 Quiz"]
 
 choice = st.sidebar.radio("Go to", menu)
 
@@ -110,72 +88,74 @@ if choice == "📊 Dashboard":
     col2.metric("Safe Messages", "80", "+5")
     col3.metric("Accuracy", "92%", "+2%")
 
-    data = pd.DataFrame({
-        "Type":["Fraud","Safe"],
-        "Count":[60,40]
-    })
+    data = pd.DataFrame({"Type":["Fraud","Safe"],"Count":[60,40]})
     st.bar_chart(data.set_index("Type"))
+
+# ---------- VIEW USERS ----------
+elif choice == "👥 Users":
+    st.subheader("👥 User Management")
+
+    users = get_all_users()
+    df_users = pd.DataFrame(users)
+
+    search = st.text_input("🔍 Search by Username")
+    role_filter = st.selectbox("Filter by Role", ["All","User","Admin"])
+
+    filtered_df = df_users.copy()
+    if search:
+        filtered_df = filtered_df[filtered_df['username'].str.contains(search, case=False)]
+    if role_filter != "All":
+        filtered_df = filtered_df[filtered_df['role'] == role_filter]
+
+    st.table(filtered_df)
+
+    st.markdown("---")
+    st.subheader("📄 User Scam Reports")
+    user_id_filter = st.number_input("Filter reports by User ID", min_value=0)
+    reports = get_all_reports()
+    df_reports = pd.DataFrame(reports)
+    if user_id_filter > 0:
+        df_reports = df_reports[df_reports['user_id'] == user_id_filter]
+    st.table(df_reports)
 
 # ---------- DETECT ----------
 elif choice == "🔍 Detect":
     st.subheader("🔍 Fraud Detection")
-
     msg = st.text_area("Enter Message")
     email = st.text_input("Email for Alert")
-
     if st.button("Analyze"):
-        with st.spinner("Analyzing..."):
-            result = predict_message(msg)
-
-        if "Fraud" in result:
-            st.error(result)
-            st.progress(90)
-        else:
-            st.success(result)
-            st.progress(30)
-
-        if "Fraud" in result and email:
-            send_alert(email, msg)
-            st.warning("📧 Alert Sent")
+        result = predict_message(msg)
+        if "Fraud" in result: st.error(result)
+        else: st.success(result)
+        if "Fraud" in result and email: send_alert(email,msg); st.warning("📧 Alert Sent")
 
 # ---------- URL ----------
 elif choice == "🌐 URL":
     st.subheader("🌐 URL Checker")
-
     url = st.text_input("Enter URL")
-
     if st.button("Check URL"):
         result = check_url(url)
-
-        if "Suspicious" in result:
-            st.error(result)
-        else:
-            st.success(result)
+        if "Suspicious" in result: st.error(result)
+        else: st.success(result)
 
 # ---------- SCREENSHOT ----------
 elif choice == "📸 Screenshot":
     st.subheader("📸 Screenshot Detection")
-
     file = st.file_uploader("Upload Image", type=["png","jpg","jpeg"])
-
     if file:
         img = Image.open(file)
         st.image(img)
-
         text = pytesseract.image_to_string(img)
         st.write("Extracted Text:", text)
+        st.write(predict_message(text))
 
-        result = predict_message(text)
-        st.write(result)
 # ---------- REPORT ----------
 elif choice == "📝 Report":
     st.subheader("📝 Report Scam")
-
     uid = st.number_input("User ID", min_value=1)
     typ = st.selectbox("Type", ["Phishing","OTP","Lottery"])
     desc = st.text_area("Description")
     link = st.text_input("Link")
-
     if st.button("Submit"):
         insert_report(uid, typ, desc, link)
         st.success("✅ Report Saved")
@@ -183,39 +163,24 @@ elif choice == "📝 Report":
 # ---------- QUIZ ----------
 elif choice == "🧠 Quiz":
     st.subheader("🧠 Cyber Awareness Quiz")
-
     quiz = get_quiz()
     st.info(quiz["question"])
-
     ans = st.radio("Choose", quiz["options"])
-
     if st.button("Submit"):
-        if ans == quiz["answer"]:
-            st.success("✅ Correct")
-            st.balloons()
-        else:
-            st.error("❌ Wrong")
+        if ans == quiz["answer"]: st.success("✅ Correct"); st.balloons()
+        else: st.error("❌ Wrong")
 
-# 🎤 VOICE DETECTION
-elif choice == "Voice":
+# ---------- VOICE ----------
+elif choice == "🎤 Voice":
     st.subheader("🎤 Voice Scam Detection")
-
     st.info("Click below and speak a suspicious message")
-
     if st.button("🎙 Start Recording"):
-        with st.spinner("Listening..."):
-            text = detect_voice()
-
+        text = detect_voice()
         st.write("🗣 Detected Speech:")
         st.success(text)
-
-        # Run fraud detection on voice text
         result = predict_message(text)
-
-        if "Fraud" in result:
-            st.error(result)
-        else:
-            st.success(result)
+        if "Fraud" in result: st.error(result)
+        else: st.success(result)
 
 # ---------- FOOTER ----------
 st.markdown("---")

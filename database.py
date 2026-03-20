@@ -38,3 +38,23 @@ def login_user(username, password):
     result = cursor.fetchone()
     conn.close()
     return result
+# Fetch all users
+def get_all_users():
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id, username, role, registration_date FROM users")
+    result = cursor.fetchall()
+    conn.close()
+    return result
+
+# Fetch all reports (optional: filter by user)
+def get_all_reports(user_id=None):
+    conn = connect_db()
+    cursor = conn.cursor(dictionary=True)
+    if user_id:
+        cursor.execute("SELECT * FROM scam_reports WHERE user_id=%s", (user_id,))
+    else:
+        cursor.execute("SELECT * FROM scam_reports")
+    result = cursor.fetchall()
+    conn.close()
+    return result
