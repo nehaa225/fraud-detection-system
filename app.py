@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import pytesseract
+from database import init_db
+init_db()
 from PIL import Image
 from fraud_model import predict_message
 from alerts import send_alert

@@ -3,11 +3,37 @@ import sqlite3
 def connect_db():
     return sqlite3.connect("fraud.db", check_same_thread=False)
 
+# ✅ CREATE TABLES ON START
+def init_db():
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        password TEXT,
+        role TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        type TEXT,
+        description TEXT,
+        link TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
 # ---------- REGISTER ----------
 def register_user(username, password, role):
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT, role TEXT)")
     cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", (username, password, role))
     conn.commit()
     conn.close()
@@ -21,7 +47,7 @@ def login_user(username, password):
     conn.close()
     return result
 
-# ---------- GET USERS ----------
+# ---------- USERS ----------
 def get_all_users():
     conn = connect_db()
     cursor = conn.cursor()
@@ -30,11 +56,10 @@ def get_all_users():
     conn.close()
     return [{"id":i[0], "username":i[1], "password":i[2], "role":i[3]} for i in data]
 
-# ---------- REPORT ----------
+# ---------- REPORTS ----------
 def insert_report(user_id, typ, desc, link):
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS reports (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, type TEXT, description TEXT, link TEXT)")
     cursor.execute("INSERT INTO reports (user_id, type, description, link) VALUES (?, ?, ?, ?)", (user_id, typ, desc, link))
     conn.commit()
     conn.close()
