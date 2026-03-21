@@ -4,6 +4,5 @@ numpy
 scikit-learn
 pillow
 pytesseract
-mysql-connector-python
 python-dotenv
 speechrecognition  # optional if using audio upload

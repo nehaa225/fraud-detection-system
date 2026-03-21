@@ -1,60 +1,48 @@
-import mysql.connector
+import sqlite3
 
 def connect_db():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="root",
-        database="fraud_detection"
-    )
+    return sqlite3.connect("fraud.db", check_same_thread=False)
 
-def insert_report(user_id, scam_type, description, link):
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO scam_reports (user_id, scam_type, description, link) VALUES (%s,%s,%s,%s)",
-        (user_id, scam_type, description, link)
-    )
-    conn.commit()
-    conn.close()
-
+# ---------- REGISTER ----------
 def register_user(username, password, role):
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO users (username, password, role) VALUES (%s,%s,%s)",
-        (username, password, role)
-    )
+    cursor.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT, role TEXT)")
+    cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", (username, password, role))
     conn.commit()
     conn.close()
 
+# ---------- LOGIN ----------
 def login_user(username, password):
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT * FROM users WHERE username=%s AND password=%s",
-        (username, password)
-    )
+    cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
     result = cursor.fetchone()
     conn.close()
     return result
-# Fetch all users
+
+# ---------- GET USERS ----------
 def get_all_users():
     conn = connect_db()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id, username, role, registration_date FROM users")
-    result = cursor.fetchall()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users")
+    data = cursor.fetchall()
     conn.close()
-    return result
+    return [{"id":i[0], "username":i[1], "password":i[2], "role":i[3]} for i in data]
 
-# Fetch all reports (optional: filter by user)
-def get_all_reports(user_id=None):
+# ---------- REPORT ----------
+def insert_report(user_id, typ, desc, link):
     conn = connect_db()
-    cursor = conn.cursor(dictionary=True)
-    if user_id:
-        cursor.execute("SELECT * FROM scam_reports WHERE user_id=%s", (user_id,))
-    else:
-        cursor.execute("SELECT * FROM scam_reports")
-    result = cursor.fetchall()
+    cursor = conn.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS reports (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, type TEXT, description TEXT, link TEXT)")
+    cursor.execute("INSERT INTO reports (user_id, type, description, link) VALUES (?, ?, ?, ?)", (user_id, typ, desc, link))
+    conn.commit()
     conn.close()
-    return result
+
+def get_all_reports():
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM reports")
+    data = cursor.fetchall()
+    conn.close()
+    return [{"id":i[0], "user_id":i[1], "type":i[2], "description":i[3], "link":i[4]} for i in data]
