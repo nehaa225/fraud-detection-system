@@ -5,4 +5,5 @@ scikit-learn
 pillow
 pytesseract
 python-dotenv
+plotly
 speechrecognition  # optional if using audio upload
