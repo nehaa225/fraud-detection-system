@@ -107,7 +107,7 @@ if not st.session_state.logged_in:
     
     with col2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("🔐 Access Portal")
+        st.subheader("🔐 FRAUD DETECTION PORTAL")
         
         # Using tabs for a cleaner "Registration Accordingly" flow
         tab1, tab2 = st.tabs(["Existing User", "New Registration"])
