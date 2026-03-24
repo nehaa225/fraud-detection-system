@@ -6,4 +6,6 @@ pillow
 pytesseract
 python-dotenv
 plotly
+pydub
+ffmpeg-python
 speechrecognition  # optional if using audio upload

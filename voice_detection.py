@@ -1,15 +1,28 @@
-# voice_detection.py
 import speech_recognition as sr
+from pydub import AudioSegment
+import tempfile
 
-def detect_voice_from_file(file):
-    """
-    Convert uploaded audio file (wav/mp3) to text using Google Speech Recognition
-    """
-    r = sr.Recognizer()
-    with sr.AudioFile(file) as source:
-        audio = r.record(source)
+def detect_voice_from_file(uploaded_file):
+    recognizer = sr.Recognizer()
+
+    # Save uploaded file temporarily
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        tmp.write(uploaded_file.read())
+        tmp_path = tmp.name
+
+    # Convert to WAV
+    audio = AudioSegment.from_file(tmp_path)
+    wav_path = tmp_path + ".wav"
+    audio.export(wav_path, format="wav")
+
+    # Read WAV file
+    with sr.AudioFile(wav_path) as source:
+        audio_data = recognizer.record(source)
+
+    # Convert speech to text
     try:
-        text = r.recognize_google(audio)
-        return text
+        text = recognizer.recognize_google(audio_data)
     except:
-        return "Could not understand audio"
+        text = "Could not understand audio"
+
+    return text
