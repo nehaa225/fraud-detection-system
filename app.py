@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import pytesseract
+import os
 import plotly.express as px
 from PIL import Image
 from database import init_db, insert_report, register_user, login_user, get_all_users, get_all_reports
@@ -14,8 +15,11 @@ from voice_detection import detect_voice_from_file
 init_db()
 
 # Tesseract Path
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-
+# Set path only if running locally (Windows)
+if os.name == "nt":
+    pytesseract.pytesseract.tesseract_cmd = "C:\Program Files\Tesseract-OCR\tesseract.exe"
+else:
+    pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="ShieldAI | Fraud Detection", page_icon="🛡️", layout="wide")
 
