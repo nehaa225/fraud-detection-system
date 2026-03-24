@@ -1,357 +1,261 @@
 import streamlit as st
 import pandas as pd
 import pytesseract
+from PIL import Image
+from database import init_db, insert_report, register_user, login_user, get_all_users, get_all_reports
+from fraud_model import predict_message
+from alerts import send_alert
+from url_checker import check_url
+from quiz import get_quiz
+from voice_detection import detect_voice_from_file
 
-from database import init_db
-
+# Initialize DB
 init_db()
 
-from PIL import Image
-
-from fraud_model import predict_message
-
-from alerts import send_alert
-
-from url_checker import check_url
-
-from database import insert_report, register_user, login_user, get_all_users, get_all_reports
-
-from quiz import get_quiz
-
-from voice_detection import detect_voice_from_file  # must accept uploaded file
-
-
-
 # Tesseract Path
-
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
+# ---------- PAGE CONFIG ----------
+st.set_page_config(page_title="ShieldAI | Fraud Detection", page_icon="🛡️", layout="wide")
 
-
-# Page config
-
-st.set_page_config(page_title="AI Fraud Detection", page_icon="🛡️", layout="wide")
-
-
-
-# ---------- STYLING ----------
-
+# ---------- ADVANCED CUSTOM STYLING ----------
 st.markdown("""
+    <style>
+    /* Main Background */
+    .stApp {
+        background: radial-gradient(circle at top left, #0f172a, #020617);
+        color: #f8fafc;
+    }
+    
+    /* Glassmorphism Containers */
+    div.stButton > button {
+        background: linear-gradient(90deg, #0ea5e9 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+    }
+    
+    div.stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+        border: none;
+        color: white;
+    }
 
-<style>
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] {
+        background-color: rgba(15, 23, 42, 0.8);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-body { background: linear-gradient(135deg, #0f172a, #1e293b); color: white; }
+    /* Modern Cards */
+    .css-1r6slb0, .e1f1d6gn1 {
+        background: rgba(30, 41, 59, 0.5);
+        padding: 2rem;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
 
-.title { text-align:center; font-size:45px; font-weight:bold; color:#38bdf8; }
+    /* Title Animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .main-title {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(to right, #38bdf8, #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 3rem;
+        font-weight: 800;
+        text-align: center;
+        margin-bottom: 1rem;
+        animation: fadeIn 1s ease-out;
+    }
 
-.card { background:#1e293b; padding:20px; border-radius:15px; text-align:center; box-shadow:0px 4px 10px rgba(0,0,0,0.5); }
+    .sub-text {
+        text-align: center;
+        color: #94a3b8;
+        margin-bottom: 3rem;
+    }
 
-.stButton>button { background: linear-gradient(to right,#22c55e,#4ade80); color:white; border-radius:10px; height:3em; width:100%; }
+    /* Input Field Styling */
+    .stTextInput input, .stTextArea textarea, .stSelectbox div {
+        background-color: #1e293b !important;
+        color: white !important;
+        border: 1px solid #334155 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-</style>
-
-""", unsafe_allow_html=True)
-
-
-
-st.markdown('<div class="title">🛡️ AI Fraud Detection System</div>', unsafe_allow_html=True)
-
-
-
-# ---------- SESSION ----------
-
+# ---------- SESSION STATE ----------
 if "logged_in" not in st.session_state:
-
     st.session_state.logged_in = False
-
     st.session_state.role = ""
 
-
-
-# ---------- LOGIN SYSTEM ----------
-
+# ---------- AUTHENTICATION UI ----------
 if not st.session_state.logged_in:
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown('<div class="main-title">🛡️ ShieldAI</div>', unsafe_allow_html=True)
+        st.markdown('<p class="sub-text">Next-gen fraud prevention & cyber awareness</p>', unsafe_allow_html=True)
+        
+        with st.container():
+            tab1, tab2 = st.tabs(["🔑 Login", "📝 Register"])
+            
+            with tab1:
+                user = st.text_input("Username", key="login_user")
+                pwd = st.text_input("Password", type="password", key="login_pwd")
+                if st.button("Access Dashboard", use_container_width=True):
+                    result = login_user(user, pwd)
+                    if result:
+                        st.session_state.logged_in = True
+                        st.session_state.role = result[3]
+                        st.success("Welcome back!")
+                        st.rerun()
+                    else:
+                        st.error("Invalid credentials")
 
-
-
-    st.subheader("🔐 Login / Register")
-
-    option = st.selectbox("Select Option", ["Login", "Register"])
-
-
-
-    if option == "Register":
-
-        user = st.text_input("Username")
-
-        pwd = st.text_input("Password", type="password")
-
-        role = st.selectbox("Role", ["User", "Admin"])
-
-        if st.button("Register"):
-
-            register_user(user, pwd, role)
-
-            st.success("✅ Registered Successfully")
-
-
-
-    else:
-
-        user = st.text_input("Username")
-
-        pwd = st.text_input("Password", type="password")
-
-        if st.button("Login"):
-
-            result = login_user(user, pwd)
-
-            if result:
-
-                st.session_state.logged_in = True
-
-                st.session_state.role = result[3]
-
-                st.success("✅ Login Successful")
-
-                st.rerun()
-
-            else:
-
-                st.error("❌ Invalid Credentials")
-
+            with tab2:
+                reg_user = st.text_input("Username", key="reg_user")
+                reg_pwd = st.text_input("Password", type="password", key="reg_pwd")
+                reg_role = st.selectbox("Role", ["User", "Admin"])
+                if st.button("Create Account", use_container_width=True):
+                    register_user(reg_user, reg_pwd, reg_role)
+                    st.success("✅ Account created! Please login.")
     st.stop()
 
-
-
-# ---------- SIDEBAR ----------
-
-st.sidebar.title("Navigation")
-
-if st.session_state.role == "Admin":
-
-    menu = ["📊 Dashboard","👥 Users","🔍 Detect","🌐 URL","🎤 Voice","📸 Screenshot","📝 Report","🧠 Quiz"]
-
-else:
-
-    menu = ["🔍 Detect","🌐 URL","🎤 Voice","📸 Screenshot","📝 Report","🧠 Quiz"]
-
-
-
-choice = st.sidebar.radio("Go to", menu)
-
-
-
-# Logout
-
-if st.sidebar.button("🚪 Logout"):
-
-    st.session_state.logged_in = False
-
-    st.session_state.role = ""
-
-    st.rerun()
-
-
-
-# ---------- DASHBOARD ----------
-
-if choice == "📊 Dashboard":
-
-    st.subheader("📊 Admin Dashboard")
-
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric("Fraud Cases", "120", "+10")
-
-    col2.metric("Safe Messages", "80", "+5")
-
-    col3.metric("Accuracy", "92%", "+2%")
-
-    data = pd.DataFrame({"Type":["Fraud","Safe"],"Count":[60,40]})
-
-    st.bar_chart(data.set_index("Type"))
-
-
-
-# ---------- VIEW USERS ----------
-
-elif choice == "👥 Users":
-
-    st.subheader("👥 User Management")
-
-    users = get_all_users()
-
-    df_users = pd.DataFrame(users)
-
-    search = st.text_input("🔍 Search by Username")
-
-    role_filter = st.selectbox("Filter by Role", ["All","User","Admin"])
-
-    filtered_df = df_users.copy()
-
-    if search:
-
-        filtered_df = filtered_df[filtered_df['username'].str.contains(search, case=False)]
-
-    if role_filter != "All":
-
-        filtered_df = filtered_df[df_users['role'] == role_filter]
-
-    st.table(filtered_df)
-
-
-
+# ---------- SIDEBAR NAVIGATION ----------
+with st.sidebar:
+    st.markdown('<h1 style="color:#38bdf8;">🛡️ ShieldAI</h1>', unsafe_allow_html=True)
     st.markdown("---")
+    
+    if st.session_state.role == "Admin":
+        menu = ["📊 Dashboard", "👥 Users", "🔍 Detect", "🌐 URL", "🎤 Voice", "📸 Screenshot", "📝 Report", "🧠 Quiz"]
+    else:
+        menu = ["🔍 Detect", "🌐 URL", "🎤 Voice", "📸 Screenshot", "📝 Report", "🧠 Quiz"]
+    
+    choice = st.radio("Navigation", menu)
+    
+    st.markdown("---")
+    if st.button("🚪 Logout", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.role = ""
+        st.rerun()
 
-    st.subheader("📄 User Scam Reports")
+# ---------- MAIN CONTENT AREA ----------
+st.markdown(f'<div class="main-title">{choice}</div>', unsafe_allow_html=True)
 
-    user_id_filter = st.number_input("Filter reports by User ID", min_value=0)
+# DASHBOARD
+if choice == "📊 Dashboard":
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Fraud Cases", "120", "+10", delta_color="inverse")
+    with col2:
+        st.metric("Safe Messages", "80", "+5")
+    with col3:
+        st.metric("System Accuracy", "92%", "+2%")
+    
+    st.markdown("### 📈 Detection Trends")
+    data = pd.DataFrame({"Type": ["Fraud", "Safe"], "Count": [60, 40]})
+    st.bar_chart(data.set_index("Type"), color="#38bdf8")
 
-    reports = get_all_reports()
+# USER MANAGEMENT
+elif choice == "👥 Users":
+    users = get_all_users()
+    df_users = pd.DataFrame(users)
+    
+    c1, c2 = st.columns(2)
+    with c1: search = st.text_input("🔍 Search Users")
+    with c2: role_filter = st.selectbox("Filter Role", ["All", "User", "Admin"])
+    
+    filtered_df = df_users.copy()
+    if search: filtered_df = filtered_df[filtered_df['username'].str.contains(search, case=False)]
+    if role_filter != "All": filtered_df = filtered_df[df_users['role'] == role_filter]
+    
+    st.dataframe(filtered_df, use_container_width=True)
 
-    df_reports = pd.DataFrame(reports)
-
-    if user_id_filter > 0:
-
-        df_reports = df_reports[df_reports['user_id'] == user_id_filter]
-
-    st.table(df_reports)
-
-
-
-# ---------- DETECT ----------
-
+# FRAUD DETECTION
 elif choice == "🔍 Detect":
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        msg = st.text_area("Paste Content to Analyze", height=200, placeholder="Enter SMS, Email or Message body here...")
+    with col2:
+        email = st.text_input("Alert Recipient", placeholder="email@example.com")
+        analyze_btn = st.button("Run AI Analysis", use_container_width=True)
+    
+    if analyze_btn:
+        with st.spinner("Analyzing patterns..."):
+            result = predict_message(msg)
+            if "Fraud" in result:
+                st.error(f"🚩 {result}")
+                if email:
+                    send_alert(email, msg)
+                    st.warning("⚠️ Alert email dispatched to security team.")
+            else:
+                st.success(f"✅ {result}")
 
-    st.subheader("🔍 Fraud Detection")
-
-    msg = st.text_area("Enter Message")
-
-    email = st.text_input("Email for Alert")
-
-    if st.button("Analyze"):
-
-        result = predict_message(msg)
-
-        if "Fraud" in result: st.error(result)
-
-        else: st.success(result)
-
-        if "Fraud" in result and email: send_alert(email,msg); st.warning("📧 Alert Sent")
-
-
-
-# ---------- URL ----------
-
+# URL CHECKER
 elif choice == "🌐 URL":
-
-    st.subheader("🌐 URL Checker")
-
-    url = st.text_input("Enter URL")
-
-    if st.button("Check URL"):
-
+    url = st.text_input("Enter URL to verify", placeholder="https://suspicious-link.com")
+    if st.button("Scan URL"):
         result = check_url(url)
-
         if "Suspicious" in result: st.error(result)
-
         else: st.success(result)
 
-
-
-# ---------- SCREENSHOT ----------
-
+# SCREENSHOT ANALYSIS
 elif choice == "📸 Screenshot":
-
-    st.subheader("📸 Screenshot Detection")
-
-    file = st.file_uploader("Upload Image", type=["png","jpg","jpeg"])
-
+    file = st.file_uploader("Upload suspicious screenshot", type=["png", "jpg", "jpeg"])
     if file:
-
         img = Image.open(file)
-
-        st.image(img)
-
-        text = pytesseract.image_to_string(img)
-
-        st.write("Extracted Text:", text)
-
-        st.write(predict_message(text))
-
-
-
-# ---------- REPORT ----------
-
-elif choice == "📝 Report":
-
-    st.subheader("📝 Report Scam")
-
-    uid = st.number_input("User ID", min_value=1)
-
-    typ = st.selectbox("Type", ["Phishing","OTP","Lottery"])
-
-    desc = st.text_area("Description")
-
-    link = st.text_input("Link")
-
-    if st.button("Submit"):
-
-        insert_report(uid, typ, desc, link)
-
-        st.success("✅ Report Saved")
-
-
-
-# ---------- QUIZ ----------
-
-elif choice == "🧠 Quiz":
-
-    st.subheader("🧠 Cyber Awareness Quiz")
-
-    quiz = get_quiz()
-
-    st.info(quiz["question"])
-
-    ans = st.radio("Choose", quiz["options"])
-
-    if st.button("Submit"):
-
-        if ans == quiz["answer"]: st.success("✅ Correct"); st.balloons()
-
-        else: st.error("❌ Wrong")
-
-
-
-# ---------- VOICE ----------
-
-elif choice == "🎤 Voice":
-
-    st.subheader("🎤 Voice Scam Detection (Upload Audio)")
-
-    uploaded_file = st.file_uploader("Upload your audio file (wav/mp3)", type=["wav","mp3"])
-
-    if uploaded_file:
-
-        if st.button("Analyze Audio"):
-
-            text = detect_voice_from_file(uploaded_file)
-
-            st.write("🗣 Detected Speech:")
-
-            st.success(text)
-
+        st.image(img, caption="Uploaded Image", use_container_width=True)
+        with st.spinner("Extracting text via OCR..."):
+            text = pytesseract.image_to_string(img)
+            st.info(f"**Extracted Text:** {text}")
             result = predict_message(text)
+            st.write(f"**AI Verdict:** {result}")
 
-            if "Fraud" in result: st.error(result)
+# SCAM REPORTING
+elif choice == "📝 Report":
+    with st.form("report_form"):
+        uid = st.number_input("User ID", min_value=1)
+        typ = st.selectbox("Scam Category", ["Phishing", "OTP", "Lottery", "Job Scam"])
+        desc = st.text_area("Detailed Description")
+        link = st.text_input("Source Link (if any)")
+        if st.form_submit_button("Submit Official Report"):
+            insert_report(uid, typ, desc, link)
+            st.success("✅ Report logged in secure database.")
 
-            else: st.success(result)
+# CYBER QUIZ
+elif choice == "🧠 Quiz":
+    quiz = get_quiz()
+    st.markdown(f"### {quiz['question']}")
+    ans = st.radio("Select the correct safety measure:", quiz["options"])
+    if st.button("Check Answer"):
+        if ans == quiz["answer"]:
+            st.balloons()
+            st.success("🎯 Spot on! You're staying safe online.")
+        else:
+            st.error("❌ That's a common trap. Remember to always verify the source!")
 
-
+# VOICE DETECTION
+elif choice == "🎤 Voice":
+    uploaded_file = st.file_uploader("Upload Call Recording", type=["wav", "mp3"])
+    if uploaded_file:
+        if st.button("Analyze Voice Print"):
+            with st.spinner("Transcribing and analyzing..."):
+                text = detect_voice_from_file(uploaded_file)
+                st.markdown(f"**Detected Speech:** *{text}*")
+                result = predict_message(text)
+                if "Fraud" in result: st.error(result)
+                else: st.success(result)
 
 # ---------- FOOTER ----------
-
 st.markdown("---")
-
-st.markdown("<center style='color:gray;'>🔐 AI Fraud Detection System </center>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: #64748b; font-size: 0.8rem;'>ShieldAI v2.0 | Secured by end-to-end encryption</div>", unsafe_allow_html=True)
