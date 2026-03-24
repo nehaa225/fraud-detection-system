@@ -177,10 +177,11 @@ if choice == "📊 Dashboard":
     st.markdown("### 🏛️ System Overview")
     
     # Summary Metrics
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total Reports")
-    col2.metric("Active Users")
-    col3.metric("System Health")
+    col1, col2, col3 = st.columns(2)
+    col1, col2, col3 = st.columns(2)
+    col1.metric("Total Reports", total_reports)
+    col2.metric("Fraud Detected", fraud_count)
+    col3.metric("Safe Messages", safe_count)
 
     st.markdown("---")
     st.markdown("### 🌳 Fraud Distribution (Tree Graph)")
