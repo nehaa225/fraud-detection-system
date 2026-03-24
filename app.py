@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import pytesseract
+import plotly.express as px
 from PIL import Image
 from database import init_db, insert_report, register_user, login_user, get_all_users, get_all_reports
 from fraud_model import predict_message
@@ -100,37 +101,56 @@ if "logged_in" not in st.session_state:
     st.session_state.role = ""
 
 # ---------- AUTHENTICATION UI ----------
+# ---------- IMPROVED LOGIN / REGISTER SYSTEM ----------
 if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
+    
     with col2:
-        st.markdown('<div class="main-title">🛡️ ShieldAI</div>', unsafe_allow_html=True)
-        st.markdown('<p class="sub-text">Next-gen fraud prevention & cyber awareness</p>', unsafe_allow_html=True)
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.subheader("🔐 Access Portal")
         
-        with st.container():
-            tab1, tab2 = st.tabs(["🔑 Login", "📝 Register"])
+        # Using tabs for a cleaner "Registration Accordingly" flow
+        tab1, tab2 = st.tabs(["Existing User", "New Registration"])
+
+        with tab2:
+            st.markdown("### Create Account")
+            new_user = st.text_input("Choose Username", placeholder="e.g. johndoe123")
+            new_pwd = st.text_input("Create Password", type="password", help="Use a strong password")
             
-            with tab1:
-                user = st.text_input("Username", key="login_user")
-                pwd = st.text_input("Password", type="password", key="login_pwd")
-                if st.button("Access Dashboard", use_container_width=True):
-                    result = login_user(user, pwd)
-                    if result:
-                        st.session_state.logged_in = True
-                        st.session_state.role = result[3]
-                        st.success("Welcome back!")
-                        st.rerun()
-                    else:
-                        st.error("Invalid credentials")
+            # This is the "Accordingly" part: Defining the role during registration
+            new_role = st.select_slider(
+                "Select Account Level",
+                options=["User", "Admin"],
+                help="Admins have access to the Dashboard and User Management."
+            )
+            
+            if st.button("Complete Registration", use_container_width=True):
+                if new_user and new_pwd:
+                    # Logic: Check if user already exists (handled in your register_user function)
+                    register_user(new_user, new_pwd, new_role)
+                    st.success(f"✅ {new_role} Account Created! You can now login.")
+                    st.balloons()
+                else:
+                    st.warning("⚠️ Please fill in all fields.")
 
-            with tab2:
-                reg_user = st.text_input("Username", key="reg_user")
-                reg_pwd = st.text_input("Password", type="password", key="reg_pwd")
-                reg_role = st.selectbox("Role", ["User", "Admin"])
-                if st.button("Create Account", use_container_width=True):
-                    register_user(reg_user, reg_pwd, reg_role)
-                    st.success("✅ Account created! Please login.")
+        with tab1:
+            st.markdown("### Login")
+            user = st.text_input("Username", key="l_user")
+            pwd = st.text_input("Password", type="password", key="l_pwd")
+            
+            if st.button("Sign In", use_container_width=True):
+                result = login_user(user, pwd)
+                if result:
+                    # result[3] is the role column from your DB (ID, User, Pwd, Role)
+                    st.session_state.logged_in = True
+                    st.session_state.role = result[3] 
+                    st.success(f"Welcome back, {user}!")
+                    st.rerun()
+                else:
+                    st.error("❌ Invalid username or password.")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
-
 # ---------- SIDEBAR NAVIGATION ----------
 with st.sidebar:
     st.markdown('<h1 style="color:#38bdf8;">🛡️ ShieldAI</h1>', unsafe_allow_html=True)
@@ -152,21 +172,50 @@ with st.sidebar:
 # ---------- MAIN CONTENT AREA ----------
 st.markdown(f'<div class="main-title">{choice}</div>', unsafe_allow_html=True)
 
-# DASHBOARD
+# ---------- DASHBOARD (TREE GRAPH VERSION) ----------
 if choice == "📊 Dashboard":
-    st.markdown("### System Health & Analytics")
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Active Scans", "1,284", "+12%")
-    c2.metric("Threats Blocked", "412", "+5%")
-    c3.metric("System Uptime", "99.9%", "0.01%")
-    c4.metric("User Trust", "94%", "+2%")
+    st.markdown("### 🏛️ System Overview")
     
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.subheader("📈 Threat Analysis Trend")
-    chart_data = pd.DataFrame({"Day": ["Mon", "Tue", "Wed", "Thu", "Fri"], "Threats": [12, 45, 30, 70, 40]})
-    st.area_chart(chart_data.set_index("Day"), color="#38bdf8")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Summary Metrics
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Reports")
+    col2.metric("Active Users")
+    col3.metric("System Health")
 
+    st.markdown("---")
+    st.markdown("### 🌳 Fraud Distribution (Tree Graph)")
+
+    # Fetching real data from your database
+    reports = get_all_reports()
+    if reports:
+        df_reports = pd.DataFrame(reports)
+        
+        # Creating a Treemap: Hierarchy is Type -> User ID
+        # This shows which scam types are most common and which users are reporting them
+        fig = px.treemap(
+            df_reports, 
+            path=[px.Constant("All Scams"), 'type', 'user_id'], 
+            values='id', # Or use a count column if available
+            color='type',
+            color_discrete_sequence=px.colors.qualitative.Pastel,
+            hover_data=['description']
+        )
+        
+        fig.update_layout(
+            margin=dict(t=10, l=10, r=10, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font_color="white"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("No report data available to generate tree graph.")
+
+    # Secondary Analytics
+    st.markdown("### 📊 Activity Trends")
+    chart_data = pd.DataFrame({"Day": ["Mon", "Tue", "Wed", "Thu", "Fri"], "Incidents": [4, 7, 2, 8, 5]})
+    st.line_chart(chart_data.set_index("Day"))
 # USER MANAGEMENT
 elif choice == "👥 Users":
     users = get_all_users()
