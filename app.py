@@ -176,12 +176,23 @@ st.markdown(f'<div class="main-title">{choice}</div>', unsafe_allow_html=True)
 if choice == "📊 Dashboard":
     st.markdown("### 🏛️ System Overview")
     
-    # Summary Metrics
-    col1, col2 = st.columns(2)
-    col1, col2 = st.columns(2)
+    # ✅ Fetch data from DB
+    reports = get_all_reports()
 
+    # ✅ Convert to DataFrame safely
+    if reports:
+        df = pd.DataFrame(reports, columns=["id", "user_id", "type", "description", "link"])
+    else:
+        df = pd.DataFrame(columns=["id", "user_id", "type", "description", "link"])
+
+    # ✅ Create 3 columns
+    col1, col2, col3 = st.columns(3)
+
+    # ✅ Metrics
     total_reports = len(df)
-    
+    fraud_count = total_reports   # since all are fraud reports
+    safe_count = 0
+
     col1.metric("Total Reports", total_reports)
     col2.metric("Fraud Detected", fraud_count)
     col3.metric("Safe Messages", safe_count)
@@ -189,22 +200,17 @@ if choice == "📊 Dashboard":
     st.markdown("---")
     st.markdown("### 🌳 Fraud Distribution (Tree Graph)")
 
-    # Fetching real data from your database
-    reports = get_all_reports()
-    if reports:
-        df_reports = pd.DataFrame(reports)
-        
-        # Creating a Treemap: Hierarchy is Type -> User ID
-        # This shows which scam types are most common and which users are reporting them
+    # ✅ Treemap
+    if not df.empty:
         fig = px.treemap(
-            df_reports, 
-            path=[px.Constant("All Scams"), 'type', 'user_id'], 
-            values='id', # Or use a count column if available
-            color='type',
+            df,
+            path=[px.Constant("All Scams"), "type", "user_id"],
+            values="id",
+            color="type",
             color_discrete_sequence=px.colors.qualitative.Pastel,
-            hover_data=['description']
+            hover_data=["description"]
         )
-        
+
         fig.update_layout(
             margin=dict(t=10, l=10, r=10, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
@@ -216,9 +222,12 @@ if choice == "📊 Dashboard":
     else:
         st.info("No report data available to generate tree graph.")
 
-    # Secondary Analytics
+    # ✅ Line chart
     st.markdown("### 📊 Activity Trends")
-    chart_data = pd.DataFrame({"Day": ["Mon", "Tue", "Wed", "Thu", "Fri"], "Incidents": [4, 7, 2, 8, 5]})
+    chart_data = pd.DataFrame({
+        "Day": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        "Incidents": [4, 7, 2, 8, 5]
+    })
     st.line_chart(chart_data.set_index("Day"))
 # USER MANAGEMENT
 elif choice == "👥 Users":
