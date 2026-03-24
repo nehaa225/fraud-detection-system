@@ -5,7 +5,7 @@ from database import init_db
 init_db()
 from PIL import Image
 from fraud_model import predict_message
-from alerts import send_alert
+from alerts import send_alerts
 from url_checker import check_url
 from database import insert_report, register_user, login_user, get_all_users, get_all_reports
 from quiz import get_quiz
