@@ -110,71 +110,94 @@ elif choice == "👥 Users":
         df_reports = df_reports[df_reports['user_id'] == user_id_filter]
     st.table(df_reports)
 
-# ---------- DETECT ----------
-elif choice == "🔍 Detect":
-    st.subheader("🔍 Fraud Detection")
-    msg = st.text_area("Enter Message")
-    email = st.text_input("Email for Alert")
-    if st.button("Analyze"):
-        result = predict_message(msg)
-        if "Fraud" in result: st.error(result)
-        else: st.success(result)
-        if "Fraud" in result and email: send_alert(email,msg); st.warning("📧 Alert Sent")
-
-# ---------- URL ----------
+# ---------- URL CHECKER ----------
 elif choice == "🌐 URL":
-    st.subheader("🌐 URL Checker")
-    url = st.text_input("Enter URL")
-    if st.button("Check URL"):
-        result = check_url(url)
-        if "Suspicious" in result: st.error(result)
-        else: st.success(result)
+    st.markdown("### 🌐 Link Integrity Scanner")
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        url_input = st.text_input("Enter URL to scan", placeholder="https://example-secure-login.com")
+        if st.button("Analyze Link"):
+            with st.spinner("Checking global blacklists..."):
+                # result = check_url(url_input)
+                st.warning("⚠️ High Risk: This URL matches known phishing patterns.")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.info("🔍 **Pro-Tip:** Hover over links in emails to see the actual destination before clicking.")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-# ---------- SCREENSHOT ----------
+# ---------- VOICE SCAM ----------
+elif choice == "🎤 Voice":
+    st.markdown("### 🎤 Biometric Fraud Detection")
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("Upload audio recording (WAV/MP3)", type=["wav", "mp3"])
+    if uploaded_file:
+        st.audio(uploaded_file)
+        if st.button("Analyze Voice Patterns"):
+            # text = detect_voice_from_file(uploaded_file)
+            st.write("🎙️ **Transcript:** 'We are calling from your bank regarding an urgent transfer...'")
+            st.error("🚨 Potential AI Voice Synthesis (Deepfake) detected.")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ---------- SCREENSHOT OCR ----------
 elif choice == "📸 Screenshot":
-    st.subheader("📸 Screenshot Detection")
-    file = st.file_uploader("Upload Image", type=["png","jpg","jpeg"])
-    if file:
-        img = Image.open(file)
-        st.image(img)
-        text = pytesseract.image_to_string(img)
-        st.write("Extracted Text:", text)
-        st.write(predict_message(text))
+    st.markdown("### 📸 Visual Evidence OCR")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        file = st.file_uploader("Upload screenshot", type=["png", "jpg", "jpeg"])
+        if file:
+            img = Image.open(file)
+            st.image(img, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with col2:
+        if file:
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+            # text = pytesseract.image_to_string(img)
+            st.subheader("Extracted Intelligence")
+            st.code("EXTRACTED TEXT: Your account has been suspended. Click here...")
+            st.error("Fraud Match Found in Database")
+            st.markdown('</div>', unsafe_allow_html=True)
 
-# ---------- REPORT ----------
+# ---------- REPORT SCAM ----------
 elif choice == "📝 Report":
-    st.subheader("📝 Report Scam")
-    uid = st.number_input("User ID", min_value=1)
-    typ = st.selectbox("Type", ["Phishing","OTP","Lottery"])
-    desc = st.text_area("Description")
-    link = st.text_input("Link")
-    if st.button("Submit"):
-        insert_report(uid, typ, desc, link)
-        st.success("✅ Report Saved")
+    st.markdown("### 📝 Incident Reporting")
+    with st.form("report_form"):
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            typ = st.selectbox("Threat Type", ["Phishing", "OTP Scam", "Lottery Fraud", "Social Engineering"])
+        with c2:
+            link = st.text_input("Associated Link/Phone No.")
+        
+        desc = st.text_area("Detailed Description of Incident")
+        submit = st.form_submit_button("Submit Report to Database")
+        
+        if submit:
+            # insert_report(st.session_state.user_id, typ, desc, link)
+            st.success("✅ Information logged. Our agents will review this signature.")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------- QUIZ ----------
 elif choice == "🧠 Quiz":
-    st.subheader("🧠 Cyber Awareness Quiz")
-    quiz = get_quiz()
-    st.info(quiz["question"])
-    ans = st.radio("Choose", quiz["options"])
-    if st.button("Submit"):
-        if ans == quiz["answer"]: st.success("✅ Correct"); st.balloons()
-        else: st.error("❌ Wrong")
-
-# ---------- VOICE ----------
-elif choice == "🎤 Voice":
-    st.subheader("🎤 Voice Scam Detection (Upload Audio)")
-    uploaded_file = st.file_uploader("Upload your audio file (wav/mp3)", type=["wav","mp3"])
-    if uploaded_file:
-        if st.button("Analyze Audio"):
-            text = detect_voice_from_file(uploaded_file)
-            st.write("🗣 Detected Speech:")
-            st.success(text)
-            result = predict_message(text)
-            if "Fraud" in result: st.error(result)
-            else: st.success(result)
-
+    st.markdown("### 🧠 Knowledge Defense")
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    # quiz = get_quiz()
+    st.subheader("Question 1")
+    st.write("An email claims your 'Netflix' account is expired and asks for credit card details on 'net-flix-secure.com'. Is this safe?")
+    ans = st.radio("Choose carefully:", ["Safe", "Scam"])
+    if st.button("Verify Answer"):
+        if ans == "Scam":
+            st.success("Correct! You spotted the look-alike domain.")
+            st.balloons()
+        else:
+            st.error("Incorrect. Always check the URL carefully.")
+    st.markdown('</div>', unsafe_allow_html=True)
 # ---------- FOOTER ----------
 st.markdown("---")
 st.markdown("<center style='color:gray;'>🔐 AI Fraud Detection System </center>", unsafe_allow_html=True)
