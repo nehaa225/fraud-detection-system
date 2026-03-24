@@ -154,17 +154,18 @@ st.markdown(f'<div class="main-title">{choice}</div>', unsafe_allow_html=True)
 
 # DASHBOARD
 if choice == "📊 Dashboard":
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Fraud Cases", "120", "+10", delta_color="inverse")
-    with col2:
-        st.metric("Safe Messages", "80", "+5")
-    with col3:
-        st.metric("System Accuracy", "92%", "+2%")
+    st.markdown("### System Health & Analytics")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Active Scans", "1,284", "+12%")
+    c2.metric("Threats Blocked", "412", "+5%")
+    c3.metric("System Uptime", "99.9%", "0.01%")
+    c4.metric("User Trust", "94%", "+2%")
     
-    st.markdown("### 📈 Detection Trends")
-    data = pd.DataFrame({"Type": ["Fraud", "Safe"], "Count": [60, 40]})
-    st.bar_chart(data.set_index("Type"), color="#38bdf8")
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.subheader("📈 Threat Analysis Trend")
+    chart_data = pd.DataFrame({"Day": ["Mon", "Tue", "Wed", "Thu", "Fri"], "Threats": [12, 45, 30, 70, 40]})
+    st.area_chart(chart_data.set_index("Day"), color="#38bdf8")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # USER MANAGEMENT
 elif choice == "👥 Users":
