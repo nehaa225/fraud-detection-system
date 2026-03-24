@@ -7,8 +7,8 @@ def send_alert(receiver_email, scam_content):
     Sends an email alert when fraud is detected.
     """
     # --- Configuration ---
-    sender_email = "your_email@gmail.com" 
-    sender_password = "your_app_password" # Use an App Password, not your real password
+    sender_email = "nehaareddy02@gmail.com" 
+    sender_password = "ybac ycjy foja inlc" 
     
     subject = "🚨 Guardian AI: Fraudulent Activity Detected"
     body = f"""
