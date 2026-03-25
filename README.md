@@ -1,3 +1,6 @@
+# 📌 Author
+Neha Reddy K
+
 # 🛡️ AI-Based Fraud Detection System
 
 ## 🚀 Overview
@@ -24,6 +27,3 @@ This project detects online fraud using Machine Learning and provides real-time 
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
-
-📌 Author
-Neha Reddy K
